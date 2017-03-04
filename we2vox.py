@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+#https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
+
 from sys import argv
 if len(argv)<2:
     print("Give .we file as argument.")
