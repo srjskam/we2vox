@@ -14,6 +14,8 @@ else:
 
 with open(infilename,'r') as f:
     s=f.read()
+if s[0] not in "45":
+    print("Warning, newer version of .we ("+s[0]+", supported: 4, 5")
 s=s[9:]
 ss=s.replace("=",":").replace("[",'').replace("]",'').replace("{}",'0').strip()[1:-1]
 nodes = {}
@@ -47,7 +49,7 @@ if len(types)> 256:
 with open('colors.txt','r') as f:
     c=f.read()
 colors={}
-for name, r,g,b in [l.split()[:4] for l in c.split('\n') if not '_' in l and ':' in l]:
+for name, r,g,b in [l.split()[:4] for l in c.split('\n') if  ':' in l]:
     colors[name]=(int(r),int(g),int(b))
 
 #print(colors)
@@ -57,11 +59,12 @@ totalbytes = 0
 def byteint(i):
     return struct.pack('<i', i)
 
-def chunk(name, data):
+def chunk(name, content=b'', children=b''):
     ch = bytearray(name)
-    ch+= byteint(len(data))
-    ch+= byteint(0) #child size
-    ch+= data
+    ch+= byteint(len(content))
+    ch+= byteint(len(children))
+    ch+= content
+    ch+= children
     return ch
 
 #SIZE
@@ -76,9 +79,57 @@ for ty in types:
     r,g,b = (80,80,80)
     if ty in colors:
         r,g,b = colors[ty]
+    else:
+        print("Color for "+ty+" undefined.")
     palette[ty] = counter
-    rgbabytes+=struct.pack('BBBB', r, g, b, 80)
+    rgbabytes+=struct.pack('BBBB', r, g, b, 0xff)
     counter +=1
+while counter < 256:
+    rgbabytes+=struct.pack('BBBB', counter,counter,counter, 0xff)
+    counter += 1
+    
+
+#MATT
+mattbytes=bytearray()
+metals = ['steel','iron','brass','gold','zinc','copper','tin','bronze','silver','chromium','titanium']
+emitters = ['lamp','light','glow','torch','chandelier','sconce']
+mattchunks = bytearray()
+for name, num in palette.items():
+    if "glass" in name or "water" in name:
+        mattbytes = bytearray()
+        mattbytes += byteint(num)
+        mattbytes += byteint(2) #glass
+        mattbytes += struct.pack('<f', 0.8)
+        mattbytes += byteint( 1<<1 #rough
+                            | 1<<3 #IOR
+                            | 1<<4 #atten
+                            )
+        mattbytes += struct.pack('<f', 0.3)
+        mattbytes += struct.pack('<f', 0.3)
+        mattbytes += struct.pack('<f', 0.1)
+        mattchunks += chunk(b'MATT', mattbytes)
+    elif any(metal in name for metal in metals):
+        mattbytes = bytearray()
+        mattbytes += byteint(num)
+        mattbytes += byteint(1) #metal
+        mattbytes += struct.pack('<f', 0.8)
+        mattbytes += byteint( 1<<1 #rough
+                            | 1<<2 #specular
+                            )
+        mattbytes += struct.pack('<f', 0.3)
+        mattbytes += struct.pack('<f', 0.8)
+        mattchunks += chunk(b'MATT', mattbytes)
+    elif any(emitter in name for emitter in emitters):
+        mattbytes = bytearray()
+        mattbytes += byteint(num)
+        mattbytes += byteint(3) #emitter
+        mattbytes += struct.pack('<f', 1.0)
+        mattbytes += byteint( 1<<5 #power
+                            | 1<<6 #glow
+                            )
+        mattbytes += struct.pack('<f', 0.9)
+        mattbytes += struct.pack('<f', 0.9)
+        mattchunks += chunk(b'MATT', mattbytes)
 
 #XYZI
 xyzibytes=bytearray()
@@ -91,18 +142,14 @@ xyzibytes = byteint(voxelcount) + xyzibytes
 #PACK
 #packbytes = bytearray(b'PACK')+byteint(1)
 
-stream = bytearray()
-stream += chunk(b'SIZE', sizebytes)
-stream += chunk(b'XYZI', xyzibytes)
-stream += chunk(b'RGBA', rgbabytes)
-totalbytes = len(stream)
-
-mainchunk = bytearray(b'VOX ')
-mainchunk+=byteint(150) 
-mainchunk+=bytearray(b'MAIN')
-mainchunk+=byteint(0)+byteint(totalbytes)
-
-stream = mainchunk + stream
+stream = bytearray(b'VOX ')
+stream+=byteint(150) 
+stream+=chunk( b'MAIN' , children 
+                    = chunk( b'SIZE' , content=sizebytes)
+                    + chunk( b'XYZI' , content=xyzibytes)
+                    + chunk( b'RGBA' , content=rgbabytes)
+                    + mattchunks
+             )
 
 with open(outfilename, 'wb') as of:
     of.write( stream)

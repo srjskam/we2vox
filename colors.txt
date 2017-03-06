@@ -15703,3 +15703,15 @@ youngtrees:youngtree2_middle 94 68 49
 youngtrees:youngtree_bottom 51 38 33
 youngtrees:youngtree_middle 176 199 137
 youngtrees:youngtree_top 190 211 156
+
+default:stone_block 91 88 8
+homedecor:book_open 110 87 43
+homedecor:candlestick_wrought_iron 169 162 145
+homedecor:door_wrought_iron_left 49 40 36
+homedecor:door_wrought_iron_right 49 40 36
+homedecor:expansion_placeholder 80 80 80
+homedecor:kitchen_chair_wood 121 77 25
+homedecor:stained_glass 234 234 234
+homedecor:wall_lamp 179 179 179
+homedecor:wall_sconce 179 179 179
+technic:slope_brass_block_inner_cut_half_raised 174 146 60
