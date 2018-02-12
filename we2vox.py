@@ -32,19 +32,28 @@ for (x,y,z), node in nodes.items():
 
 #print(maxx, maxy, maxz)
 
-types = set()
+from collections import Counter
+
+typesAll = []
 for x,y,z in ((x,y,z) for x in range(maxx+1) for y in range(maxy+1) for z in range(maxz+1)):
     if (x,y,z) in nodes:
         node=nodes[(x,y,z)]
-        types.add(node)
+        typesAll.append(node)
 
-types=sorted(list(types))
-#print(types, len(types))
+typesCount = [(howmany,typ) for typ, howmany in  Counter(typesAll).items() ]
+typesCount=list(reversed(sorted(typesCount)))
 
-if len(types)> 256:
-    print("No luck: too many different nodes for .vox palette (256 colors max).")
-    exit(1)
+types = set()
+# only take the 255 most common blocks
+for _, typ in typesCount[:255]:
+    types.add(typ)
 
+#rest will be the same block
+types.add("overflowblock")
+for _, typ in typesCount[255:]:
+    for coord, node in nodes.items():
+        if node == typ:
+            nodes[coord] = "overflowblock"
 
 with open('colors.txt','r') as f:
     c=f.read()
