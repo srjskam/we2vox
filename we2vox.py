@@ -2,13 +2,26 @@
 
 #https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
 
-from sys import argv
-if len(argv)<2:
+import os, sys, getopt
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "-c", ["colors="])
+except getopt.GetoptError as err:
+    print(err)
+    print(__file__, "[--colors <colorfile>] <infile.we>  [outfile.vox]")
+    sys.exit(2)
+
+if len(opts) != 0 and opts[0][0]=='--colors':
+    colorfile=opts[0][1]
+else:
+    colorfile=os.path.dirname(os.path.realpath(__file__))+os.sep+"colors.txt"
+
+if len(args)<1:
     print("Give .we file as argument.")
     exit(1)
-infilename = argv[1]
-if len(argv) ==3:
-    outfilename = argv[2]
+infilename = args[0]
+if len(args) ==2:
+    outfilename = args[1]
 else:
     outfilename=infilename+".vox"
 
@@ -55,7 +68,7 @@ for _, typ in typesCount[255:]:
         if node == typ:
             nodes[coord] = "overflowblock"
 
-with open('colors.txt','r') as f:
+with open(colorfile,'r') as f:
     c=f.read()
 colors={}
 for name, r,g,b in [l.split()[:4] for l in c.split('\n') if  ':' in l]:
